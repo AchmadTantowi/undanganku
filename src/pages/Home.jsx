@@ -1,7 +1,10 @@
 import React from 'react';
 import { Container, Typography, Button, Paper, Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <Container maxWidth="md" className="py-12">
       <Paper elevation={3} className="p-8 rounded-2xl bg-white shadow-xl">
@@ -13,7 +16,13 @@ export default function Home() {
             Selamat datang di template aplikasi undangan digital premium.
           </Typography>
           <div className="flex justify-center gap-4">
-            <Button variant="contained" color="primary" size="large" className="rounded-xl px-6 py-2">
+            <Button 
+              variant="contained" 
+              color="primary" 
+              size="large" 
+              className="rounded-xl px-6 py-2"
+              onClick={() => navigate('/create')}
+            >
               Mulai Sekarang
             </Button>
             <Button variant="outlined" color="primary" size="large" className="rounded-xl px-6 py-2">

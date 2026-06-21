@@ -1,9 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
+import invitationReducer from './invitationSlice';
 
 // Redux store configuration. Add your reducers here.
 export const store = configureStore({
   reducer: {
-    // placeholder: (state = {}) => state
+    invitation: invitationReducer,
   },
 });
 
