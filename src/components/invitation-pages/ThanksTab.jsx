@@ -5,6 +5,9 @@ export default function ThanksTab({ wording, template }) {
   const { theme, category } = template;
 
   const getThanksMessage = () => {
+    if (wording && wording.thanksMessage) {
+      return wording.thanksMessage;
+    }
     switch (category) {
       case 'wedding':
         return 'Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu bagi kami berdua.\n\nAtas kehadiran dan doa restunya, kami ucapkan terima kasih.';

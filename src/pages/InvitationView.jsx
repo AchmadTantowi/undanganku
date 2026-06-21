@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { Box, Typography, Button, Paper, CircularProgress, IconButton, BottomNavigation, BottomNavigationAction } from '@mui/material';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -20,8 +20,9 @@ import SalamTab from '../components/invitation-pages/SalamTab';
 import AcaraTab from '../components/invitation-pages/AcaraTab';
 import ReservasiTab from '../components/invitation-pages/ReservasiTab';
 import ThanksTab from '../components/invitation-pages/ThanksTab';
+import { getInvitationBySlug } from '../api/storage';
 
-export default function InvitationView() {
+export default function InvitationView(props) {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [template, setTemplate] = useState(null);
@@ -39,8 +40,46 @@ export default function InvitationView() {
   const guestName = searchParams.get('to') || 'Tamu Kehormatan';
   const invitationId = searchParams.get('data') || 'default';
 
+  // Get slug from route parameters if available
+  const { slug } = useParams();
+
   useEffect(() => {
+    // If dynamic data is supplied as props (for editor preview mode)
+    if (props && props.previewData) {
+      setData(props.previewData);
+      const tpl = templates.find((t) => t.id === props.previewData.t);
+      if (tpl) {
+        setTemplate(refineTemplateTheme(tpl));
+      } else {
+        setError('Template tidak valid.');
+      }
+      setLoading(false);
+      return;
+    }
+
     const rawData = searchParams.get('data');
+    
+    // Check if we have a slug route parameter
+    if (slug) {
+      const storedInvitation = getInvitationBySlug(slug);
+      if (storedInvitation) {
+        const mappedData = {
+          t: storedInvitation.templateId,
+          m: storedInvitation.musicId,
+          w: storedInvitation.w
+        };
+        setData(mappedData);
+        const tpl = templates.find((t) => t.id === storedInvitation.templateId);
+        if (tpl) {
+          setTemplate(refineTemplateTheme(tpl));
+        } else {
+          setError('Template tidak valid.');
+        }
+        setLoading(false);
+        return;
+      }
+    }
+
     if (!rawData) {
       setError('Data undangan tidak ditemukan. Harap pastikan tautan Anda benar.');
       setLoading(false);
@@ -55,46 +94,7 @@ export default function InvitationView() {
       if (!tpl) {
         setError('Template tidak valid.');
       } else {
-        // Enforce & refine the 3 specific premium design theme configurations
-        const refinedTpl = { ...tpl };
-        const category = refinedTpl.category;
-
-        if (category === 'wedding') {
-          refinedTpl.theme = {
-            primaryColor: '#0284c7', // Elegant Blue (Blue Butterfly)
-            secondaryColor: '#f43f5e', // Rose / Floral Accent
-            backgroundColor: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', // Pastel Blue Background
-            fontHeader: '"Playfair Display", "Cinzel", Georgia, serif',
-            fontBody: '"Inter", sans-serif',
-            textColor: '#1e3a8a', // Dark Blue text
-            cardBg: 'rgba(255, 255, 255, 0.9)',
-            dividerStyle: 'floral'
-          };
-        } else if (category === 'graduation') {
-          refinedTpl.theme = {
-            primaryColor: '#eab308', // Shiny Gold Accent
-            secondaryColor: '#fbbf24', // Amber Gold
-            backgroundColor: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)', // Dark Emerald Green
-            fontHeader: '"Cinzel", serif',
-            fontBody: '"Outfit", sans-serif',
-            textColor: '#f8fafc', // White/slate light text
-            cardBg: 'rgba(6, 78, 59, 0.85)', // Semi-transparent emerald glassmorphism
-            dividerStyle: 'gold-line'
-          };
-        } else if (category === 'birthday') {
-          refinedTpl.theme = {
-            primaryColor: '#db2777', // Deep pink
-            secondaryColor: '#0284c7', // Sea Blue
-            backgroundColor: 'linear-gradient(135deg, #fef08a 0%, #7dd3fc 100%)', // Yellow & Light Blue Gradient (Bikini Bottom)
-            fontHeader: '"Fredoka", cursive',
-            fontBody: '"Quicksand", sans-serif',
-            textColor: '#1e3a8a', // Dark Blue text
-            cardBg: 'rgba(255, 255, 255, 0.88)',
-            dividerStyle: 'hearts'
-          };
-        }
-
-        setTemplate(refinedTpl);
+        setTemplate(refineTemplateTheme(tpl));
       }
     } catch (e) {
       console.error(e);
@@ -102,7 +102,49 @@ export default function InvitationView() {
     } finally {
       setLoading(false);
     }
-  }, [searchParams]);
+  }, [searchParams, slug, props]);
+
+  // Helper function to apply styling based on category
+  const refineTemplateTheme = (tpl) => {
+    const refinedTpl = { ...tpl };
+    const category = refinedTpl.category;
+
+    if (category === 'wedding') {
+      refinedTpl.theme = {
+        primaryColor: '#0284c7', // Elegant Blue (Blue Butterfly)
+        secondaryColor: '#f43f5e', // Rose / Floral Accent
+        backgroundColor: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', // Pastel Blue Background
+        fontHeader: '"Playfair Display", "Cinzel", Georgia, serif',
+        fontBody: '"Inter", sans-serif',
+        textColor: '#1e3a8a', // Dark Blue text
+        cardBg: 'rgba(255, 255, 255, 0.9)',
+        dividerStyle: 'floral'
+      };
+    } else if (category === 'graduation') {
+      refinedTpl.theme = {
+        primaryColor: '#eab308', // Shiny Gold Accent
+        secondaryColor: '#fbbf24', // Amber Gold
+        backgroundColor: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)', // Dark Emerald Green
+        fontHeader: '"Cinzel", serif',
+        fontBody: '"Outfit", sans-serif',
+        textColor: '#f8fafc', // White/slate light text
+        cardBg: 'rgba(6, 78, 59, 0.85)', // Semi-transparent emerald glassmorphism
+        dividerStyle: 'gold-line'
+      };
+    } else if (category === 'birthday') {
+      refinedTpl.theme = {
+        primaryColor: '#db2777', // Deep pink
+        secondaryColor: '#0284c7', // Sea Blue
+        backgroundColor: 'linear-gradient(135deg, #fef08a 0%, #7dd3fc 100%)', // Yellow & Light Blue Gradient (Bikini Bottom)
+        fontHeader: '"Fredoka", cursive',
+        fontBody: '"Quicksand", sans-serif',
+        textColor: '#1e3a8a', // Dark Blue text
+        cardBg: 'rgba(255, 255, 255, 0.88)',
+        dividerStyle: 'hearts'
+      };
+    }
+    return refinedTpl;
+  };
 
   // Audio setup when data/music is loaded
   useEffect(() => {
